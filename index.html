@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPATIAL_OS // QUANTUM TAB DECK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    :root {
+      --cyan: #00f0ff;
+      --crimson: #ff0055;
+      --amber: #ffaa00;
+      --bg: #030407;
+      --panel-bg: rgba(6, 10, 18, 0.82);
+      --border-color: rgba(0, 240, 255, 0.22);
+    }
+    body {
+      background-color: var(--bg);
+      color: #94a3b8;
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+
+    /* Scanline effect */
+    body::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
+      background-size: 100% 4px;
+      z-index: 5;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    #webgl-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+
+    #hand-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* TOP CYBER TAB BAR */
+    #tab-bar-container {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 12px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      padding: 8px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.08);
+    }
+    .hud-tab {
+      padding: 6px 16px;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      color: #64748b;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hud-tab.active {
+      color: #fff;
+      background: rgba(0, 240, 255, 0.12);
+      border: 1px solid var(--cyan);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+    }
+    .tab-swipe-cue {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      color: var(--cyan);
+      opacity: 0.8;
+      white-space: nowrap;
+    }
+
+    /* TAB CONTENT OVERLAYS */
+    .tab-viewport {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 520px;
+      max-width: 90vw;
+      z-index: 9;
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      border-radius: 6px;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+      animation: tabFadeIn 0.3s ease forwards;
+    }
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translate(-50%, 10px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    .tab-viewport.active-view {
+      display: block;
+    }
+    .view-title {
+      font-size: 0.85rem;
+      color: var(--cyan);
+      letter-spacing: 0.15em;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .view-body {
+      font-size: 0.72rem;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
+    /* Dimensional Warp HUD Box */
+    #portal-box {
+      position: absolute;
+      display: none;
+      border: 2px dashed #ff0055;
+      background: radial-gradient(circle, rgba(255, 0, 85, 0.2) 0%, rgba(0, 240, 255, 0.05) 100%);
+      box-shadow: 0 0 30px rgba(255, 0, 85, 0.4), inset 0 0 20px rgba(255, 0, 85, 0.3);
+      pointer-events: none;
+      z-index: 4;
+      backdrop-filter: hue-rotate(90deg) contrast(1.4);
+    }
+    #portal-tag {
+      position: absolute;
+      top: -22px;
+      left: 0;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      color: #fff;
+      background: var(--crimson);
+      padding: 2px 6px;
+      font-weight: 700;
+    }
+
+    /* HUD Corner Brackets */
+    .screen-bracket {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .bracket-tl { top: 20px; left: 20px; border-top: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
+    .bracket-tr { top: 20px; right: 20px; border-top: 2px solid var(--cyan); border-right: 2px solid var(--cyan); }
+    .bracket-bl { bottom: 20px; left: 20px; border-bottom: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
+    .bracket-br { bottom: 20px; right: 20px; border-bottom: 2px solid var(--cyan); border-right: 2px solid var(--cyan); }
+
+    /* Left Telemetry Panel */
+    #hud-panel {
+      position: absolute;
+      top: 28px;
+      left: 32px;
+      z-index: 10;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      padding: 16px 20px;
+      border-radius: 4px;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.05);
+      width: 280px;
+    }
+    .hud-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .hud-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+    .telemetry-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      margin-bottom: 6px;
+      letter-spacing: 0.05em;
+    }
+    .telemetry-val {
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+    .finger-badge {
+      font-size: 0.95rem;
+      color: var(--cyan);
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+    #status-ribbon {
+      margin-top: 12px;
+      padding: 6px 8px;
+      background: rgba(0, 240, 255, 0.05);
+      border: 1px solid var(--border-color);
+      font-size: 0.68rem;
+      text-align: center;
+      letter-spacing: 0.1em;
+      color: var(--cyan);
+      text-transform: uppercase;
+    }
+    #status-ribbon.engaged {
+      background: rgba(255, 0, 85, 0.2);
+      border-color: var(--crimson);
+      color: #ff99bb;
+    }
+    #status-ribbon.swiping {
+      background: rgba(0, 240, 255, 0.25);
+      border-color: var(--cyan);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+    }
+
+    /* Picture-in-picture webcam frame */
+    #pip-container {
+      position: absolute;
+      bottom: 28px;
+      right: 32px;
+      width: 190px;
+      height: 135px;
+      background: #020305;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      z-index: 10;
+    }
+    .pip-header {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      z-index: 12;
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+      color: var(--cyan);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 2px 6px;
+      border-radius: 2px;
+      border-left: 2px solid var(--cyan);
+    }
+    #webcam {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    /* Bottom left instructions */
+    #hud-instructions {
+      position: absolute;
+      bottom: 28px;
+      left: 32px;
+      z-index: 10;
+      font-size: 0.68rem;
+      line-height: 1.6;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      padding: 10px 14px;
+      border-left: 2px solid var(--cyan);
+    }
+    #hud-instructions b { color: #cbd5e1; }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="screen-bracket bracket-tl"></div>
+  <div class="screen-bracket bracket-tr"></div>
+  <div class="screen-bracket bracket-bl"></div>
+  <div class="screen-bracket bracket-br"></div>
+
+  <!-- Virtual Cyber Tab Bar -->
+  <div id="tab-bar-container">
+    <div class="hud-tab active" data-tab="0">//01 CORE_MATRIX</div>
+    <div class="hud-tab" data-tab="1">//02 SENSOR_DATA</div>
+    <div class="hud-tab" data-tab="2">//03 NEURAL_LOGS</div>
+    <div class="hud-tab" data-tab="3">//04 SYS_SETTINGS</div>
+    <div class="tab-swipe-cue">◄ 2-FINGER AIR SWIPE ► TO SWITCH TABS</div>
+  </div>
+
+  <!-- Tab Viewport Panels -->
+  <div id="view-0" class="tab-viewport active-view">
+    <div class="view-title">[TAB_01] CENTRAL TORUS COMPUTATION</div>
+    <div class="view-body">
+      3D Spatial rendering active via WebGL & Three.js.<br>
+      • Orbit manually with Mouse Drag.<br>
+      • Pinch Thumb + Index to grab and translate in 3D.<br>
+      • Dual-thumb pinch tears open the dimensional portal box.
+    </div>
+  </div>
+
+  <div id="view-1" class="tab-viewport">
+    <div class="view-title">[TAB_02] OPTICAL SENSOR TELEMETRY</div>
+    <div class="view-body">
+      • MediaPipe Hand Landmark v0.10.14 running on Edge WASM.<br>
+      • Tracking 21 3D coordinates per hand at ~60 FPS.<br>
+      • Swipe Gesture Engine: Euclidean vector delta on landmarks 8 & 12.
+    </div>
+  </div>
+
+  <div id="view-2" class="tab-viewport">
+    <div class="view-title">[TAB_03] NEURAL LOG EXECUTION</div>
+    <div class="view-body">
+      [LOG_001] Optical mirror stream synchronized.<br>
+      [LOG_002] Gesture classification pipeline primed.<br>
+      [LOG_003] Dual-digit velocity buffer: STABLE.<br>
+      [LOG_004] Zero external telemetry sent. 100% Client-side.
+    </div>
+  </div>
+
+  <div id="view-3" class="tab-viewport">
+    <div class="view-title">[TAB_04] SYSTEM CONFIGURATION</div>
+    <div class="view-body">
+      • Swipe Cooldown: 450ms debounce.<br>
+      • Minimum Swipe Velocity Threshold: 0.18 viewport normalized.<br>
+      • Gesture Target: Index + Middle Tip midpoint delta.
+    </div>
+  </div>
+
+  <!-- Telemetry HUD Panel -->
+  <div id="hud-panel">
+    <div class="hud-title-row">
+      <div class="hud-title">
+        <span class="pulse-dot"></span>
+        <span>SPATIAL_OS</span>
+      </div>
+      <span style="font-size:0.65rem; color:var(--cyan);">DECK.5.0</span>
+    </div>
+    <div class="telemetry-row">
+      <span>ACTIVE_TAB</span>
+      <span id="tele-tab" class="telemetry-val">01 // CORE_MATRIX</span>
+    </div>
+    <div class="telemetry-row">
+      <span>FINGERS_UP</span>
+      <span id="tele-fingers" class="finger-badge">0</span>
+    </div>
+    <div class="telemetry-row">
+      <span>SWIPE_VECTOR</span>
+      <span id="tele-swipe" class="telemetry-val">IDLE</span>
+    </div>
+    <div id="status-ribbon">SEARCHING OPTICAL STREAM</div>
+  </div>
+
+  <!-- Instructions Ribbon -->
+  <div id="hud-instructions">
+    • <b>2-FINGER SWIPE:</b> EXTEND INDEX + MIDDLE & SWIPE LEFT/RIGHT<br>
+    • <b>MOUSE:</b> CLICK & DRAG TO ORBIT 3D SCENE<br>
+    • <b>TWO-HAND PINCH:</b> EXPAND BOUNDS TO TEAR HYPERSPACE PORTAL
+  </div>
+
+  <div id="portal-box">
+    <div id="portal-tag">DIMENSIONAL_PORTAL [WARP ACTIVE]</div>
+  </div>
+
+  <div id="pip-container">
+    <div class="pip-header">FEED_01 // OPTICAL</div>
+    <video id="webcam" autoplay playsinline muted></video>
+  </div>
+
+  <canvas id="webgl-canvas"></canvas>
+  <canvas id="hand-canvas"></canvas>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
+
+    const statusRibbon = document.getElementById('status-ribbon');
+    const teleTab = document.getElementById('tele-tab');
+    const teleFingers = document.getElementById('tele-fingers');
+    const teleSwipe = document.getElementById('tele-swipe');
+    const portalBox = document.getElementById('portal-box');
+    const video = document.getElementById('webcam');
+    const canvas3D = document.getElementById('webgl-canvas');
+    const handCanvas = document.getElementById('hand-canvas');
+    const ctx2D = handCanvas.getContext('2d');
+    const tabs = document.querySelectorAll('.hud-tab');
+    const views = document.querySelectorAll('.tab-viewport');
+
+    function resizeCanvas() {
+      handCanvas.width = window.innerWidth;
+      handCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // --- Tab Switching Controller ---
+    let currentTabIndex = 0;
+    const tabNames = ["01 // CORE_MATRIX", "02 // SENSOR_DATA", "03 // NEURAL_LOGS", "04 // SYS_SETTINGS"];
+
+    function switchTab(newIndex) {
+      if (newIndex < 0) newIndex = tabs.length - 1;
+      if (newIndex >= tabs.length) newIndex = 0;
+      currentTabIndex = newIndex;
+
+      tabs.forEach((tab, i) => tab.classList.toggle('active', i === currentTabIndex));
+      views.forEach((view, i) => view.classList.toggle('active-view', i === currentTabIndex));
+      teleTab.textContent = tabNames[currentTabIndex];
+    }
+
+    // --- 1. Three.js Scene Setup ---
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x030407, 0.035);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 8);
+
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas3D, antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+
+    const coreLight = new THREE.PointLight(0x00f0ff, 4, 50);
+    coreLight.position.set(0, 3, 5);
+    scene.add(coreLight);
+
+    const coreGroup = new THREE.Group();
+    scene.add(coreGroup);
+
+    const knotGeo = new THREE.TorusKnotGeometry(1.3, 0.35, 180, 36);
+    const knotMat = new THREE.MeshStandardMaterial({ color: 0x050811, metalness: 0.9, roughness: 0.1 });
+    const knotMesh = new THREE.Mesh(knotGeo, knotMat);
+    coreGroup.add(knotMesh);
+
+    const wireMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.35 });
+    const wireMesh = new THREE.Mesh(knotGeo, wireMat);
+    coreGroup.add(wireMesh);
+
+    // Hyper-Space Warp Cylinder
+    const tunnelGroup = new THREE.Group();
+    scene.add(tunnelGroup);
+    const tunnelGeo = new THREE.CylinderGeometry(4.5, 4.5, 50, 24, 40, true);
+    const tunnelMat = new THREE.MeshBasicMaterial({ color: 0xff0055, wireframe: true, transparent: true, opacity: 0.0 });
+    const tunnelMesh = new THREE.Mesh(tunnelGeo, tunnelMat);
+    tunnelMesh.rotation.x = Math.PI / 2;
+    tunnelGroup.add(tunnelMesh);
+
+    // Background Particles
+    const starCount = 450;
+    const starGeo = new THREE.BufferGeometry();
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount * 3; i += 3) {
+      starPositions[i] = (Math.random() - 0.5) * 40;
+      starPositions[i + 1] = (Math.random() - 0.5) * 25;
+      starPositions[i + 2] = (Math.random() - 0.5) * 35;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0x00f0ff, size: 0.045, transparent: true, opacity: 0.5 });
+    const starParticles = new THREE.Points(starGeo, starMat);
+    scene.add(starParticles);
+
+    // Mouse Orbit Fallback
+    let isMouseDown = false, prevMouseX = 0, prevMouseY = 0;
+    window.addEventListener('mousedown', (e) => { isMouseDown = true; prevMouseX = e.clientX; prevMouseY = e.clientY; });
+    window.addEventListener('mouseup', () => { isMouseDown = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (isMouseDown) {
+        coreGroup.rotation.y += (e.clientX - prevMouseX) * 0.008;
+        coreGroup.rotation.x += (e.clientY - prevMouseY) * 0.008;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+      }
+    });
+
+    // --- 2. MediaPipe Vision Setup ---
+    let handLandmarker = null;
+
+    async function initVision() {
+      try {
+        const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+        handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+            delegate: "GPU"
+          },
+          runningMode: "VIDEO",
+          numHands: 2
+        });
+
+        statusRibbon.textContent = "SYNCHRONIZING OPTICAL STREAM";
+        await startCamera();
+      } catch (err) {
+        console.error(err);
+        statusRibbon.textContent = "VISION INITIALIZATION FAULT";
+      }
+    }
+
+    async function startCamera() {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: "user" }
+      });
+      video.srcObject = stream;
+      video.addEventListener("loadeddata", () => {
+        statusRibbon.textContent = "GESTURE ENGINE ACTIVE";
+        renderLoop();
+      });
+    }
+
+    const HAND_CONNECTIONS = [
+      [0,1],[1,2],[2,3],[3,4],
+      [0,5],[5,6],[6,7],[7,8],
+      [5,9],[9,10],[10,11],[11,12],
+      [9,13],[13,14],[14,15],[15,16],
+      [13,17],[17,18],[18,19],[19,20],
+      [0,17]
+    ];
+    const FINGER_TIPS = [4, 8, 12, 16, 20];
+
+    function toScreen(pt) {
+      return { x: (1.0 - pt.x) * window.innerWidth, y: pt.y * window.innerHeight };
+    }
+
+    // --- 3. Gesture State Tracking ---
+    let prevSwipeX = null;
+    let lastSwipeTime = 0;
+    const swipeCooldown = 450; // ms between tab transitions
+    let lastVideoTime = -1;
+    let inWarpDimension = false;
+
+    function renderLoop() {
+      requestAnimationFrame(renderLoop);
+      ctx2D.clearRect(0, 0, handCanvas.width, handCanvas.height);
+      coreGroup.rotation.y += 0.008;
+
+      let totalFingers = 0;
+      let handPinches = [];
+      let twoFingerSwipeActive = false;
+
+      if (handLandmarker && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+        lastVideoTime = video.currentTime;
+        const results = handLandmarker.detectForVideo(video, performance.now());
+
+        if (results.landmarks && results.landmarks.length > 0) {
+          results.landmarks.forEach((landmarks) => {
+            // Count raised fingers
+            let raisedFingers = 0;
+            const isRight = landmarks[17].x > landmarks[5].x;
+            const thumbUp = isRight ? landmarks[4].x < landmarks[3].x : landmarks[4].x > landmarks[3].x;
+            const indexUp = landmarks[8].y < landmarks[6].y;
+            const middleUp = landmarks[12].y < landmarks[10].y;
+            const ringUp = landmarks[16].y < landmarks[14].y;
+            const pinkyUp = landmarks[20].y < landmarks[18].y;
+
+            if (thumbUp) raisedFingers++;
+            if (indexUp) raisedFingers++;
+            if (middleUp) raisedFingers++;
+            if (ringUp) raisedFingers++;
+            if (pinkyUp) raisedFingers++;
+            totalFingers += raisedFingers;
+
+            // Draw Skeleton
+            ctx2D.lineWidth = 2;
+            ctx2D.strokeStyle = inWarpDimension ? "rgba(255, 0, 85, 0.45)" : "rgba(0, 240, 255, 0.4)";
+            HAND_CONNECTIONS.forEach(([i, j]) => {
+              const p1 = toScreen(landmarks[i]);
+              const p2 = toScreen(landmarks[j]);
+              ctx2D.beginPath();
+              ctx2D.moveTo(p1.x, p1.y);
+              ctx2D.lineTo(p2.x, p2.y);
+              ctx2D.stroke();
+            });
+
+            // Draw Neon Fingertips
+            FINGER_TIPS.forEach((tipIndex) => {
+              const tip = toScreen(landmarks[tipIndex]);
+              ctx2D.fillStyle = inWarpDimension ? "#ffaa00" : "#00f0ff";
+              ctx2D.shadowColor = inWarpDimension ? "#ffaa00" : "#00f0ff";
+              ctx2D.shadowBlur = 12;
+              ctx2D.beginPath();
+              ctx2D.arc(tip.x, tip.y, 6, 0, Math.PI * 2);
+              ctx2D.fill();
+              ctx2D.shadowBlur = 0;
+            });
+
+            // --- 2-FINGER SWIPE DETECTION ---
+            // Triggered when EXACTLY Index and Middle are raised, while Thumb, Ring, Pinky are down
+            if (indexUp && middleUp && !ringUp && !pinkyUp && !thumbUp) {
+              twoFingerSwipeActive = true;
+              const currentX = (landmarks[8].x + landmarks[12].x) / 2; // Normalized X
+              const now = performance.now();
+
+              // Draw a connector beam between the 2 swiping fingertips
+              const pIndex = toScreen(landmarks[8]);
+              const pMiddle = toScreen(landmarks[12]);
+              ctx2D.strokeStyle = "#ffffff";
+              ctx2D.lineWidth = 4;
+              ctx2D.beginPath();
+              ctx2D.moveTo(pIndex.x, pIndex.y);
+              ctx2D.lineTo(pMiddle.x, pMiddle.y);
+              ctx2D.stroke();
+
+              if (prevSwipeX !== null && now - lastSwipeTime > swipeCooldown) {
+                // In mirrored mode: moving hand left increases X, moving right decreases X
+                const deltaX = currentX - prevSwipeX;
+
+                if (deltaX > 0.08) {
+                  // Swiped Left
+                  switchTab(currentTabIndex - 1);
+                  teleSwipe.textContent = "SWIPE_PREV [◄ LEFT]";
+                  statusRibbon.textContent = "TAB SWITCH: PREV";
+                  statusRibbon.className = "swiping";
+                  lastSwipeTime = now;
+                } else if (deltaX < -0.08) {
+                  // Swiped Right
+                  switchTab(currentTabIndex + 1);
+                  teleSwipe.textContent = "SWIPE_NEXT [RIGHT ►]";
+                  statusRibbon.textContent = "TAB SWITCH: NEXT";
+                  statusRibbon.className = "swiping";
+                  lastSwipeTime = now;
+                }
+              }
+              prevSwipeX = currentX;
+            }
+
+            // Pinch measurement (for dual-hand portal warp)
+            const thumb = landmarks[4];
+            const index = landmarks[8];
+            const pinchDist = Math.hypot(thumb.x - index.x, thumb.y - index.y, thumb.z - index.z);
+            if (pinchDist < 0.08) {
+              handPinches.push(toScreen({ x: (thumb.x + index.x) / 2, y: (thumb.y + index.y) / 2 }));
+            }
+          });
+
+          teleFingers.textContent = totalFingers;
+
+          if (!twoFingerSwipeActive) {
+            prevSwipeX = null;
+            teleSwipe.textContent = "IDLE";
+          }
+
+          // Dual-Thumb Dimensional Warp
+          if (handPinches.length >= 2) {
+            inWarpDimension = true;
+            statusRibbon.textContent = "DIMENSION RIFT DETECTED";
+            statusRibbon.className = "warp";
+
+            const p1 = handPinches[0], p2 = handPinches[1];
+            const minX = Math.min(p1.x, p2.x), maxX = Math.max(p1.x, p2.x);
+            const minY = Math.min(p1.y, p2.y), maxY = Math.max(p1.y, p2.y);
+
+            portalBox.style.display = 'block';
+            portalBox.style.left = `${minX}px`;
+            portalBox.style.top = `${minY}px`;
+            portalBox.style.width = `${Math.max(80, maxX - minX)}px`;
+            portalBox.style.height = `${Math.max(80, maxY - minY)}px`;
+
+            tunnelMat.opacity = THREE.MathUtils.lerp(tunnelMat.opacity, 0.7, 0.1);
+            tunnelMesh.rotation.z += 0.04;
+            coreGroup.scale.lerp(new THREE.Vector3(0.3, 0.3, 0.3), 0.1);
+            starMat.color.setHex(0xffaa00);
+            coreLight.color.setHex(0xff0055);
+          } else {
+            inWarpDimension = false;
+            portalBox.style.display = 'none';
+            tunnelMat.opacity = THREE.MathUtils.lerp(tunnelMat.opacity, 0.0, 0.08);
+            coreGroup.scale.lerp(new THREE.Vector3(1, 1, 1), 0.08);
+            starMat.color.setHex(0x00f0ff);
+            coreLight.color.setHex(0x00f0ff);
+
+            if (!twoFingerSwipeActive) {
+              statusRibbon.textContent = "SKELETON TRACKING ACTIVE";
+              statusRibbon.className = "engaged";
+            }
+          }
+        } else {
+          teleFingers.textContent = "0";
+          portalBox.style.display = 'none';
+          inWarpDimension = false;
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    initVision();
+  </script>
+</body>
+</html>
