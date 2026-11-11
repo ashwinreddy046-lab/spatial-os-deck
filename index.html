@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SPATIAL_OS // QUANTUM TAB DECK</title>
+  <title>SPATIAL_OS // QUANTUM QUAD-LOCK</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -19,7 +19,7 @@
       --crimson: #ff0055;
       --amber: #ffaa00;
       --bg: #030407;
-      --panel-bg: rgba(6, 10, 18, 0.82);
+      --panel-bg: rgba(6, 10, 18, 0.85);
       --border-color: rgba(0, 240, 255, 0.22);
     }
     body {
@@ -29,10 +29,9 @@
       overflow: hidden;
       width: 100vw;
       height: 100vh;
-      cursor: crosshair;
+      cursor: default;
     }
 
-    /* Scanline effect */
     body::after {
       content: "";
       position: absolute;
@@ -44,7 +43,7 @@
       background-size: 100% 4px;
       z-index: 5;
       pointer-events: none;
-      opacity: 0.7;
+      opacity: 0.65;
     }
 
     #webgl-canvas {
@@ -66,7 +65,39 @@
       pointer-events: none;
     }
 
-    /* TOP CYBER TAB BAR */
+    /* Air-Mouse Reticle */
+    #virtual-cursor {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--cyan);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 100;
+      transform: translate(-50%, -50%);
+      display: none;
+      box-shadow: 0 0 14px var(--cyan);
+      transition: width 0.1s, height 0.1s, border-color 0.1s;
+    }
+    #virtual-cursor::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 4px;
+      background: #fff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+    #virtual-cursor.clicking {
+      border-color: var(--crimson);
+      box-shadow: 0 0 20px var(--crimson);
+      width: 26px;
+      height: 26px;
+    }
+
+    /* TOP TAB BAR */
     #tab-bar-container {
       position: absolute;
       top: 24px;
@@ -74,7 +105,7 @@
       transform: translateX(-50%);
       z-index: 10;
       display: flex;
-      gap: 12px;
+      gap: 10px;
       background: var(--panel-bg);
       backdrop-filter: blur(16px);
       padding: 8px 14px;
@@ -83,98 +114,136 @@
       box-shadow: 0 0 25px rgba(0, 240, 255, 0.08);
     }
     .hud-tab {
-      padding: 6px 16px;
-      font-size: 0.75rem;
+      padding: 6px 14px;
+      font-size: 0.72rem;
       letter-spacing: 0.12em;
       color: #64748b;
       border: 1px solid transparent;
       border-radius: 3px;
+      cursor: pointer;
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
     .hud-tab.active {
       color: #fff;
-      background: rgba(0, 240, 255, 0.12);
+      background: rgba(0, 240, 255, 0.14);
       border: 1px solid var(--cyan);
       box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
     }
-    .tab-swipe-cue {
-      position: absolute;
-      bottom: -22px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 0.62rem;
-      letter-spacing: 0.1em;
-      color: var(--cyan);
-      opacity: 0.8;
-      white-space: nowrap;
-    }
 
-    /* TAB CONTENT OVERLAYS */
+    /* PRACTICAL TAB PANELS */
     .tab-viewport {
       position: absolute;
-      top: 100px;
+      top: 86px;
       left: 50%;
       transform: translateX(-50%);
-      width: 520px;
+      width: 560px;
       max-width: 90vw;
       z-index: 9;
       background: var(--panel-bg);
       backdrop-filter: blur(14px);
       border: 1px solid var(--border-color);
-      padding: 20px;
+      padding: 18px 22px;
       border-radius: 6px;
       display: none;
       box-shadow: 0 10px 40px rgba(0,0,0,0.7);
-      animation: tabFadeIn 0.3s ease forwards;
+      animation: tabFadeIn 0.25s ease forwards;
     }
     @keyframes tabFadeIn {
-      from { opacity: 0; transform: translate(-50%, 10px); }
+      from { opacity: 0; transform: translate(-50%, 8px); }
       to { opacity: 1; transform: translate(-50%, 0); }
     }
     .tab-viewport.active-view {
       display: block;
     }
-    .view-title {
-      font-size: 0.85rem;
+    .panel-header {
+      font-size: 0.82rem;
       color: var(--cyan);
       letter-spacing: 0.15em;
       border-bottom: 1px solid rgba(0, 240, 255, 0.2);
       padding-bottom: 8px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
       margin-bottom: 12px;
+      flex-wrap: wrap;
     }
-    .view-body {
+    .hud-btn {
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid var(--border-color);
+      color: #e2e8f0;
+      padding: 7px 14px;
       font-size: 0.72rem;
-      line-height: 1.6;
-      color: #cbd5e1;
+      font-family: inherit;
+      letter-spacing: 0.08em;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
-
-    /* Dimensional Warp HUD Box */
-    #portal-box {
-      position: absolute;
-      display: none;
-      border: 2px dashed #ff0055;
-      background: radial-gradient(circle, rgba(255, 0, 85, 0.2) 0%, rgba(0, 240, 255, 0.05) 100%);
-      box-shadow: 0 0 30px rgba(255, 0, 85, 0.4), inset 0 0 20px rgba(255, 0, 85, 0.3);
-      pointer-events: none;
-      z-index: 4;
-      backdrop-filter: hue-rotate(90deg) contrast(1.4);
-    }
-    #portal-tag {
-      position: absolute;
-      top: -22px;
-      left: 0;
-      font-size: 0.65rem;
-      letter-spacing: 0.15em;
+    .hud-btn:hover {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: var(--cyan);
       color: #fff;
-      background: var(--crimson);
-      padding: 2px 6px;
-      font-weight: 700;
+    }
+    .hud-btn.danger {
+      border-color: rgba(255, 0, 85, 0.4);
+      color: #ff99bb;
+    }
+    .hud-btn.danger:hover {
+      background: rgba(255, 0, 85, 0.25);
+      border-color: var(--crimson);
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.72rem;
+      margin-top: 10px;
+    }
+    .slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--cyan);
+      cursor: pointer;
     }
 
-    /* HUD Corner Brackets */
+    #sketch-canvas {
+      width: 100%;
+      height: 180px;
+      background: rgba(2, 4, 8, 0.85);
+      border: 1px dashed rgba(0, 240, 255, 0.3);
+      border-radius: 4px;
+      margin-top: 10px;
+      cursor: crosshair;
+    }
+
+    .synth-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .synth-pad {
+      background: rgba(0, 240, 255, 0.06);
+      border: 1px solid var(--border-color);
+      color: var(--cyan);
+      padding: 16px 8px;
+      text-align: center;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .synth-pad:active, .synth-pad.active {
+      background: var(--cyan);
+      color: #000;
+      box-shadow: 0 0 15px var(--cyan);
+    }
+
+    /* Corner Accents */
     .screen-bracket {
       position: absolute;
       width: 24px;
@@ -245,7 +314,6 @@
       font-size: 0.95rem;
       color: var(--cyan);
       font-weight: 700;
-      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
     }
     #status-ribbon {
       margin-top: 12px;
@@ -259,18 +327,18 @@
       text-transform: uppercase;
     }
     #status-ribbon.engaged {
-      background: rgba(255, 0, 85, 0.2);
+      background: rgba(255, 0, 85, 0.25);
       border-color: var(--crimson);
       color: #ff99bb;
+      box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
     }
-    #status-ribbon.swiping {
-      background: rgba(0, 240, 255, 0.25);
+    #status-ribbon.mouse-mode {
+      background: rgba(0, 240, 255, 0.2);
       border-color: var(--cyan);
       color: #fff;
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
     }
 
-    /* Picture-in-picture webcam frame */
     #pip-container {
       position: absolute;
       bottom: 28px;
@@ -304,7 +372,6 @@
       transform: scaleX(-1);
     }
 
-    /* Bottom left instructions */
     #hud-instructions {
       position: absolute;
       bottom: 28px;
@@ -337,51 +404,81 @@
   <div class="screen-bracket bracket-bl"></div>
   <div class="screen-bracket bracket-br"></div>
 
-  <!-- Virtual Cyber Tab Bar -->
+  <!-- Virtual Air-Mouse Pointer -->
+  <div id="virtual-cursor"></div>
+
+  <!-- Virtual Tab Bar -->
   <div id="tab-bar-container">
-    <div class="hud-tab active" data-tab="0">//01 CORE_MATRIX</div>
-    <div class="hud-tab" data-tab="1">//02 SENSOR_DATA</div>
-    <div class="hud-tab" data-tab="2">//03 NEURAL_LOGS</div>
-    <div class="hud-tab" data-tab="3">//04 SYS_SETTINGS</div>
-    <div class="tab-swipe-cue">◄ 2-FINGER AIR SWIPE ► TO SWITCH TABS</div>
+    <div class="hud-tab active" data-tab="0">//01 CORE_STUDIO</div>
+    <div class="hud-tab" data-tab="1">//02 AIR_CANVAS</div>
+    <div class="hud-tab" data-tab="2">//03 AUDIO_SYNTH</div>
+    <div class="hud-tab" data-tab="3">//04 DEV_METRICS</div>
   </div>
 
-  <!-- Tab Viewport Panels -->
+  <!-- TAB 01: 3D MODEL STUDIO -->
   <div id="view-0" class="tab-viewport active-view">
-    <div class="view-title">[TAB_01] CENTRAL TORUS COMPUTATION</div>
-    <div class="view-body">
-      3D Spatial rendering active via WebGL & Three.js.<br>
-      • Orbit manually with Mouse Drag.<br>
-      • Pinch Thumb + Index to grab and translate in 3D.<br>
-      • Dual-thumb pinch tears open the dimensional portal box.
+    <div class="panel-header">
+      <span>//01 3D CORE CONTROLLER</span>
+      <span style="font-size: 0.65rem; color: #64748b;">GEOMETRY DISPATCH</span>
+    </div>
+    <p style="font-size:0.72rem; margin-bottom:10px;">Select 3D Topology Wireframe:</p>
+    <div class="btn-group">
+      <button class="hud-btn" id="btn-geo-knot">TORUS KNOT</button>
+      <button class="hud-btn" id="btn-geo-sphere">CYBER SPHERE</button>
+      <button class="hud-btn" id="btn-geo-cube">QUANTUM CUBE</button>
+      <button class="hud-btn" id="btn-toggle-wire">TOGGLE MESH</button>
+    </div>
+    <div class="slider-row">
+      <span>CORE SCALE:</span>
+      <input type="range" id="slider-scale" min="0.5" max="2.0" step="0.1" value="1.0">
+      <span id="scale-val">1.0x</span>
     </div>
   </div>
 
+  <!-- TAB 02: SPATIAL AIR SKETCHPAD -->
   <div id="view-1" class="tab-viewport">
-    <div class="view-title">[TAB_02] OPTICAL SENSOR TELEMETRY</div>
-    <div class="view-body">
-      • MediaPipe Hand Landmark v0.10.14 running on Edge WASM.<br>
-      • Tracking 21 3D coordinates per hand at ~60 FPS.<br>
-      • Swipe Gesture Engine: Euclidean vector delta on landmarks 8 & 12.
+    <div class="panel-header">
+      <span>//02 SPATIAL AIR CANVAS</span>
+      <span style="font-size: 0.65rem; color: #64748b;">VECTOR BUFFER</span>
     </div>
+    <div class="btn-group">
+      <button class="hud-btn" id="btn-brush-cyan">COLOR: CYAN</button>
+      <button class="hud-btn" id="btn-brush-crimson">COLOR: CRIMSON</button>
+      <button class="hud-btn danger" id="btn-clear-canvas">CLEAR SKETCH</button>
+    </div>
+    <canvas id="sketch-canvas"></canvas>
   </div>
 
+  <!-- TAB 03: SYNTHESIS AUDIO MATRIX -->
   <div id="view-2" class="tab-viewport">
-    <div class="view-title">[TAB_03] NEURAL LOG EXECUTION</div>
-    <div class="view-body">
-      [LOG_001] Optical mirror stream synchronized.<br>
-      [LOG_002] Gesture classification pipeline primed.<br>
-      [LOG_003] Dual-digit velocity buffer: STABLE.<br>
-      [LOG_004] Zero external telemetry sent. 100% Client-side.
+    <div class="panel-header">
+      <span>//03 WEB AUDIO SYNTHESIZER</span>
+      <span style="font-size: 0.65rem; color: #64748b;">OSCILLATOR PADS</span>
+    </div>
+    <p style="font-size:0.72rem; margin-bottom:6px;">Trigger Sine / Square Oscillators:</p>
+    <div class="synth-grid">
+      <div class="synth-pad" data-freq="220">A3 [220Hz]</div>
+      <div class="synth-pad" data-freq="261.6">C4 [261Hz]</div>
+      <div class="synth-pad" data-freq="329.6">E4 [330Hz]</div>
+      <div class="synth-pad" data-freq="392.0">G4 [392Hz]</div>
+      <div class="synth-pad" data-freq="440">A4 [440Hz]</div>
+      <div class="synth-pad" data-freq="523.2">C5 [523Hz]</div>
+      <div class="synth-pad" data-freq="659.2">E5 [659Hz]</div>
+      <div class="synth-pad" data-freq="783.9">G5 [784Hz]</div>
     </div>
   </div>
 
+  <!-- TAB 04: DEV METRICS -->
   <div id="view-3" class="tab-viewport">
-    <div class="view-title">[TAB_04] SYSTEM CONFIGURATION</div>
-    <div class="view-body">
-      • Swipe Cooldown: 450ms debounce.<br>
-      • Minimum Swipe Velocity Threshold: 0.18 viewport normalized.<br>
-      • Gesture Target: Index + Middle Tip midpoint delta.
+    <div class="panel-header">
+      <span>//04 RUNTIME TELEMETRY</span>
+      <span style="font-size: 0.65rem; color: #64748b;">CLIENT SPEC</span>
+    </div>
+    <div style="font-size:0.74rem; line-height: 1.8;">
+      <div class="telemetry-row"><span>DISPLAY VIEWPORT</span><span class="telemetry-val" id="spec-res">1920x1080</span></div>
+      <div class="telemetry-row"><span>TRACKING LATENCY</span><span class="telemetry-val" id="spec-lat">~14ms</span></div>
+      <div class="telemetry-row"><span>DIMENSION LOCK</span><span class="telemetry-val" id="spec-lock">STANDBY</span></div>
+      <div class="telemetry-row"><span>PIPELINE ENGINE</span><span class="telemetry-val">MediaPipe GPU Edge</span></div>
     </div>
   </div>
 
@@ -392,32 +489,32 @@
         <span class="pulse-dot"></span>
         <span>SPATIAL_OS</span>
       </div>
-      <span style="font-size:0.65rem; color:var(--cyan);">DECK.5.0</span>
+      <span style="font-size:0.65rem; color:var(--cyan);">QUAD.7.0</span>
     </div>
     <div class="telemetry-row">
-      <span>ACTIVE_TAB</span>
-      <span id="tele-tab" class="telemetry-val">01 // CORE_MATRIX</span>
+      <span>CONTROL_MODE</span>
+      <span id="tele-mode" class="telemetry-val">HOVER</span>
+    </div>
+    <div class="telemetry-row">
+      <span>WARP_STATE</span>
+      <span id="tele-warp" class="telemetry-val">INACTIVE</span>
     </div>
     <div class="telemetry-row">
       <span>FINGERS_UP</span>
       <span id="tele-fingers" class="finger-badge">0</span>
     </div>
     <div class="telemetry-row">
-      <span>SWIPE_VECTOR</span>
-      <span id="tele-swipe" class="telemetry-val">IDLE</span>
+      <span>FPS_RENDER</span>
+      <span id="tele-fps" class="telemetry-val">60</span>
     </div>
     <div id="status-ribbon">SEARCHING OPTICAL STREAM</div>
   </div>
 
   <!-- Instructions Ribbon -->
   <div id="hud-instructions">
-    • <b>2-FINGER SWIPE:</b> EXTEND INDEX + MIDDLE & SWIPE LEFT/RIGHT<br>
-    • <b>MOUSE:</b> CLICK & DRAG TO ORBIT 3D SCENE<br>
-    • <b>TWO-HAND PINCH:</b> EXPAND BOUNDS TO TEAR HYPERSPACE PORTAL
-  </div>
-
-  <div id="portal-box">
-    <div id="portal-tag">DIMENSIONAL_PORTAL [WARP ACTIVE]</div>
+    • <b>PINCH 1 HAND:</b> AIR-MOUSE CURSOR & AUTO-CLICK<br>
+    • <b>TOUCH PINCHES OF BOTH HANDS:</b> LOCKS 4 FINGERS INTO EXPANDING DIMENSION<br>
+    • <b>RELEASE PINCH:</b> COLLAPSES THE DIMENSION BACK TO NORMAL
   </div>
 
   <div id="pip-container">
@@ -433,28 +530,30 @@
     import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
 
     const statusRibbon = document.getElementById('status-ribbon');
-    const teleTab = document.getElementById('tele-tab');
+    const teleMode = document.getElementById('tele-mode');
+    const teleWarp = document.getElementById('tele-warp');
     const teleFingers = document.getElementById('tele-fingers');
-    const teleSwipe = document.getElementById('tele-swipe');
-    const portalBox = document.getElementById('portal-box');
+    const teleFps = document.getElementById('tele-fps');
+    const specLock = document.getElementById('spec-lock');
     const video = document.getElementById('webcam');
     const canvas3D = document.getElementById('webgl-canvas');
     const handCanvas = document.getElementById('hand-canvas');
     const ctx2D = handCanvas.getContext('2d');
+    const virtualCursor = document.getElementById('virtual-cursor');
     const tabs = document.querySelectorAll('.hud-tab');
     const views = document.querySelectorAll('.tab-viewport');
+    const specRes = document.getElementById('spec-res');
 
     function resizeCanvas() {
       handCanvas.width = window.innerWidth;
       handCanvas.height = window.innerHeight;
+      if (specRes) specRes.textContent = `${window.innerWidth}x${window.innerHeight}`;
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // --- Tab Switching Controller ---
+    // Tabs Controller
     let currentTabIndex = 0;
-    const tabNames = ["01 // CORE_MATRIX", "02 // SENSOR_DATA", "03 // NEURAL_LOGS", "04 // SYS_SETTINGS"];
-
     function switchTab(newIndex) {
       if (newIndex < 0) newIndex = tabs.length - 1;
       if (newIndex >= tabs.length) newIndex = 0;
@@ -462,10 +561,53 @@
 
       tabs.forEach((tab, i) => tab.classList.toggle('active', i === currentTabIndex));
       views.forEach((view, i) => view.classList.toggle('active-view', i === currentTabIndex));
-      teleTab.textContent = tabNames[currentTabIndex];
     }
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => switchTab(parseInt(tab.dataset.tab)));
+    });
 
-    // --- 1. Three.js Scene Setup ---
+    // Sketchpad Setup
+    const sketchCanvas = document.getElementById('sketch-canvas');
+    const sketchCtx = sketchCanvas.getContext('2d');
+    let brushColor = '#00f0ff';
+    let isDrawing = false;
+    let prevSketchX = 0, prevSketchY = 0;
+
+    function resizeSketchCanvas() {
+      const rect = sketchCanvas.getBoundingClientRect();
+      sketchCanvas.width = rect.width;
+      sketchCanvas.height = rect.height;
+    }
+    setTimeout(resizeSketchCanvas, 500);
+
+    document.getElementById('btn-brush-cyan').onclick = () => brushColor = '#00f0ff';
+    document.getElementById('btn-brush-crimson').onclick = () => brushColor = '#ff0055';
+    document.getElementById('btn-clear-canvas').onclick = () => sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+
+    // Audio Synth Setup
+    let audioCtx = null;
+    function playTone(freq) {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.4);
+    }
+    document.querySelectorAll('.synth-pad').forEach(pad => {
+      pad.addEventListener('click', () => {
+        playTone(parseFloat(pad.dataset.freq));
+        pad.classList.add('active');
+        setTimeout(() => pad.classList.remove('active'), 200);
+      });
+    });
+
+    // --- 1. Three.js Universe Setup ---
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x030407, 0.035);
 
@@ -487,15 +629,37 @@
     scene.add(coreGroup);
 
     const knotGeo = new THREE.TorusKnotGeometry(1.3, 0.35, 180, 36);
+    const sphereGeo = new THREE.SphereGeometry(1.5, 32, 32);
+    const boxGeo = new THREE.BoxGeometry(2.0, 2.0, 2.0);
+
     const knotMat = new THREE.MeshStandardMaterial({ color: 0x050811, metalness: 0.9, roughness: 0.1 });
-    const knotMesh = new THREE.Mesh(knotGeo, knotMat);
-    coreGroup.add(knotMesh);
-
     const wireMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.35 });
-    const wireMesh = new THREE.Mesh(knotGeo, wireMat);
-    coreGroup.add(wireMesh);
 
-    // Hyper-Space Warp Cylinder
+    let activeMesh = new THREE.Mesh(knotGeo, knotMat);
+    let activeWire = new THREE.Mesh(knotGeo, wireMat);
+    coreGroup.add(activeMesh);
+    coreGroup.add(activeWire);
+
+    function swapGeometry(newGeo) {
+      activeMesh.geometry.dispose();
+      activeWire.geometry.dispose();
+      activeMesh.geometry = newGeo;
+      activeWire.geometry = newGeo;
+    }
+
+    document.getElementById('btn-geo-knot').onclick = () => swapGeometry(knotGeo);
+    document.getElementById('btn-geo-sphere').onclick = () => swapGeometry(sphereGeo);
+    document.getElementById('btn-geo-cube').onclick = () => swapGeometry(boxGeo);
+    document.getElementById('btn-toggle-wire').onclick = () => activeWire.visible = !activeWire.visible;
+
+    const scaleSlider = document.getElementById('slider-scale');
+    scaleSlider.oninput = (e) => {
+      const val = parseFloat(e.target.value);
+      coreGroup.scale.set(val, val, val);
+      document.getElementById('scale-val').textContent = `${val.toFixed(1)}x`;
+    };
+
+    // Hyperspace Portal Cylinder
     const tunnelGroup = new THREE.Group();
     scene.add(tunnelGroup);
     const tunnelGeo = new THREE.CylinderGeometry(4.5, 4.5, 50, 24, 40, true);
@@ -504,8 +668,8 @@
     tunnelMesh.rotation.x = Math.PI / 2;
     tunnelGroup.add(tunnelMesh);
 
-    // Background Particles
-    const starCount = 450;
+    // Starfield
+    const starCount = 400;
     const starGeo = new THREE.BufferGeometry();
     const starPositions = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount * 3; i += 3) {
@@ -515,21 +679,7 @@
     }
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
     const starMat = new THREE.PointsMaterial({ color: 0x00f0ff, size: 0.045, transparent: true, opacity: 0.5 });
-    const starParticles = new THREE.Points(starGeo, starMat);
-    scene.add(starParticles);
-
-    // Mouse Orbit Fallback
-    let isMouseDown = false, prevMouseX = 0, prevMouseY = 0;
-    window.addEventListener('mousedown', (e) => { isMouseDown = true; prevMouseX = e.clientX; prevMouseY = e.clientY; });
-    window.addEventListener('mouseup', () => { isMouseDown = false; });
-    window.addEventListener('mousemove', (e) => {
-      if (isMouseDown) {
-        coreGroup.rotation.y += (e.clientX - prevMouseX) * 0.008;
-        coreGroup.rotation.x += (e.clientY - prevMouseY) * 0.008;
-        prevMouseX = e.clientX;
-        prevMouseY = e.clientY;
-      }
-    });
+    scene.add(new THREE.Points(starGeo, starMat));
 
     // --- 2. MediaPipe Vision Setup ---
     let handLandmarker = null;
@@ -579,29 +729,56 @@
       return { x: (1.0 - pt.x) * window.innerWidth, y: pt.y * window.innerHeight };
     }
 
-    // --- 3. Gesture State Tracking ---
+    // --- 3. Gesture Engine & Dynamic Quad-Lock State ---
     let prevSwipeX = null;
     let lastSwipeTime = 0;
-    const swipeCooldown = 450; // ms between tab transitions
+    const swipeCooldown = 450;
     let lastVideoTime = -1;
-    let inWarpDimension = false;
+
+    // Dimension Quad-Lock State Tracker
+    let isDimensionLocked = false;
+
+    // Air-Mouse Smoothing
+    let cursorX = window.innerWidth / 2;
+    let cursorY = window.innerHeight / 2;
+    let lastClickTime = 0;
+
+    // FPS Telemetry
+    let frameCount = 0;
+    let lastFpsTime = performance.now();
 
     function renderLoop() {
       requestAnimationFrame(renderLoop);
+
+      frameCount++;
+      const now = performance.now();
+      if (now - lastFpsTime >= 1000) {
+        teleFps.textContent = frameCount;
+        frameCount = 0;
+        lastFpsTime = now;
+      }
+
       ctx2D.clearRect(0, 0, handCanvas.width, handCanvas.height);
       coreGroup.rotation.y += 0.008;
 
       let totalFingers = 0;
-      let handPinches = [];
       let twoFingerSwipeActive = false;
+      let airMouseEngaged = false;
+
+      // Track pinched hands for the Quad-Lock
+      // Each entry stores { thumb, index, midPoint }
+      let pinchedHands = [];
 
       if (handLandmarker && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+        const startTime = performance.now();
         lastVideoTime = video.currentTime;
-        const results = handLandmarker.detectForVideo(video, performance.now());
+        const results = handLandmarker.detectForVideo(video, startTime);
+        const latency = performance.now() - startTime;
+        const specLat = document.getElementById('spec-lat');
+        if (specLat) specLat.textContent = `~${latency.toFixed(1)}ms`;
 
         if (results.landmarks && results.landmarks.length > 0) {
           results.landmarks.forEach((landmarks) => {
-            // Count raised fingers
             let raisedFingers = 0;
             const isRight = landmarks[17].x > landmarks[5].x;
             const thumbUp = isRight ? landmarks[4].x < landmarks[3].x : landmarks[4].x > landmarks[3].x;
@@ -617,9 +794,9 @@
             if (pinkyUp) raisedFingers++;
             totalFingers += raisedFingers;
 
-            // Draw Skeleton
+            // Draw Hand Skeleton
             ctx2D.lineWidth = 2;
-            ctx2D.strokeStyle = inWarpDimension ? "rgba(255, 0, 85, 0.45)" : "rgba(0, 240, 255, 0.4)";
+            ctx2D.strokeStyle = isDimensionLocked ? "rgba(255, 0, 85, 0.45)" : "rgba(0, 240, 255, 0.35)";
             HAND_CONNECTIONS.forEach(([i, j]) => {
               const p1 = toScreen(landmarks[i]);
               const p2 = toScreen(landmarks[j]);
@@ -629,112 +806,224 @@
               ctx2D.stroke();
             });
 
-            // Draw Neon Fingertips
+            // Draw Fingertip Neon Dots
             FINGER_TIPS.forEach((tipIndex) => {
               const tip = toScreen(landmarks[tipIndex]);
-              ctx2D.fillStyle = inWarpDimension ? "#ffaa00" : "#00f0ff";
-              ctx2D.shadowColor = inWarpDimension ? "#ffaa00" : "#00f0ff";
-              ctx2D.shadowBlur = 12;
+              ctx2D.fillStyle = isDimensionLocked ? "#ff0055" : "#00f0ff";
+              ctx2D.shadowColor = isDimensionLocked ? "#ff0055" : "#00f0ff";
+              ctx2D.shadowBlur = 10;
               ctx2D.beginPath();
               ctx2D.arc(tip.x, tip.y, 6, 0, Math.PI * 2);
               ctx2D.fill();
               ctx2D.shadowBlur = 0;
             });
 
-            // --- 2-FINGER SWIPE DETECTION ---
-            // Triggered when EXACTLY Index and Middle are raised, while Thumb, Ring, Pinky are down
-            if (indexUp && middleUp && !ringUp && !pinkyUp && !thumbUp) {
-              twoFingerSwipeActive = true;
-              const currentX = (landmarks[8].x + landmarks[12].x) / 2; // Normalized X
-              const now = performance.now();
+            // Measure Pinch on this hand (Thumb #4 to Index #8)
+            const thumb = landmarks[4];
+            const index = landmarks[8];
+            const pinchDist = Math.hypot(thumb.x - index.x, thumb.y - index.y, thumb.z - index.z);
 
-              // Draw a connector beam between the 2 swiping fingertips
-              const pIndex = toScreen(landmarks[8]);
-              const pMiddle = toScreen(landmarks[12]);
-              ctx2D.strokeStyle = "#ffffff";
-              ctx2D.lineWidth = 4;
-              ctx2D.beginPath();
-              ctx2D.moveTo(pIndex.x, pIndex.y);
-              ctx2D.lineTo(pMiddle.x, pMiddle.y);
-              ctx2D.stroke();
+            if (pinchDist < 0.08) {
+              const tScreen = toScreen(thumb);
+              const iScreen = toScreen(index);
+              const midScreen = {
+                x: (tScreen.x + iScreen.x) / 2,
+                y: (tScreen.y + iScreen.y) / 2
+              };
+              pinchedHands.push({
+                thumb: tScreen,
+                index: iScreen,
+                mid: midScreen
+              });
+            }
+
+            // 2-Finger Swipe Check (Index + Middle extended, others down)
+            if (indexUp && middleUp && !ringUp && !pinkyUp && !thumbUp && !isDimensionLocked) {
+              twoFingerSwipeActive = true;
+              const currentX = (landmarks[8].x + landmarks[12].x) / 2;
 
               if (prevSwipeX !== null && now - lastSwipeTime > swipeCooldown) {
-                // In mirrored mode: moving hand left increases X, moving right decreases X
                 const deltaX = currentX - prevSwipeX;
-
                 if (deltaX > 0.08) {
-                  // Swiped Left
                   switchTab(currentTabIndex - 1);
-                  teleSwipe.textContent = "SWIPE_PREV [◄ LEFT]";
                   statusRibbon.textContent = "TAB SWITCH: PREV";
-                  statusRibbon.className = "swiping";
                   lastSwipeTime = now;
                 } else if (deltaX < -0.08) {
-                  // Swiped Right
                   switchTab(currentTabIndex + 1);
-                  teleSwipe.textContent = "SWIPE_NEXT [RIGHT ►]";
                   statusRibbon.textContent = "TAB SWITCH: NEXT";
-                  statusRibbon.className = "swiping";
                   lastSwipeTime = now;
                 }
               }
               prevSwipeX = currentX;
             }
-
-            // Pinch measurement (for dual-hand portal warp)
-            const thumb = landmarks[4];
-            const index = landmarks[8];
-            const pinchDist = Math.hypot(thumb.x - index.x, thumb.y - index.y, thumb.z - index.z);
-            if (pinchDist < 0.08) {
-              handPinches.push(toScreen({ x: (thumb.x + index.x) / 2, y: (thumb.y + index.y) / 2 }));
-            }
           });
 
           teleFingers.textContent = totalFingers;
 
-          if (!twoFingerSwipeActive) {
-            prevSwipeX = null;
-            teleSwipe.textContent = "IDLE";
-          }
+          // --- 4. DUAL-HAND TOUCH & QUAD-LOCK DIMENSION CONTROLLER ---
+          if (pinchedHands.length === 2) {
+            const h1 = pinchedHands[0];
+            const h2 = pinchedHands[1];
 
-          // Dual-Thumb Dimensional Warp
-          if (handPinches.length >= 2) {
-            inWarpDimension = true;
-            statusRibbon.textContent = "DIMENSION RIFT DETECTED";
-            statusRibbon.className = "warp";
+            // Distance between the two pinched center points (in pixels)
+            const handsGap = Math.hypot(h1.mid.x - h2.mid.x, h1.mid.y - h2.mid.y);
 
-            const p1 = handPinches[0], p2 = handPinches[1];
-            const minX = Math.min(p1.x, p2.x), maxX = Math.max(p1.x, p2.x);
-            const minY = Math.min(p1.y, p2.y), maxY = Math.max(p1.y, p2.y);
+            // If the two pinches are brought close together (< 160px), ENGAGE LOCK
+            if (handsGap < 160) {
+              isDimensionLocked = true;
+            }
 
-            portalBox.style.display = 'block';
-            portalBox.style.left = `${minX}px`;
-            portalBox.style.top = `${minY}px`;
-            portalBox.style.width = `${Math.max(80, maxX - minX)}px`;
-            portalBox.style.height = `${Math.max(80, maxY - minY)}px`;
+            // If engaged, continuously track and render the connecting dimension lines between all 4 fingers
+            if (isDimensionLocked) {
+              teleWarp.textContent = "QUAD_LOCK_WARP";
+              statusRibbon.textContent = "DIMENSION LOCKED // 4-FINGER MATRIX";
+              statusRibbon.className = "engaged";
+              if (specLock) specLock.textContent = "QUAD_ACTIVE";
 
-            tunnelMat.opacity = THREE.MathUtils.lerp(tunnelMat.opacity, 0.7, 0.1);
-            tunnelMesh.rotation.z += 0.04;
-            coreGroup.scale.lerp(new THREE.Vector3(0.3, 0.3, 0.3), 0.1);
-            starMat.color.setHex(0xffaa00);
-            coreLight.color.setHex(0xff0055);
+              // 4 active fingertips
+              const pA = h1.thumb;
+              const pB = h1.index;
+              const pC = h2.thumb;
+              const pD = h2.index;
+
+              // 1. Draw glowing perimeter connecting the 4 fingers
+              ctx2D.save();
+              ctx2D.lineWidth = 3;
+              ctx2D.strokeStyle = "#ff0055";
+              ctx2D.shadowColor = "#ff0055";
+              ctx2D.shadowBlur = 18;
+
+              ctx2D.beginPath();
+              ctx2D.moveTo(pA.x, pA.y);
+              ctx2D.lineTo(pB.x, pB.y);
+              ctx2D.lineTo(pD.x, pD.y);
+              ctx2D.lineTo(pC.x, pC.y);
+              ctx2D.closePath();
+              ctx2D.stroke();
+
+              // 2. Draw crosshair diagonal beams
+              ctx2D.setLineDash([6, 6]);
+              ctx2D.lineWidth = 1.5;
+              ctx2D.strokeStyle = "#ffaa00";
+              ctx2D.beginPath();
+              ctx2D.moveTo(pA.x, pA.y);
+              ctx2D.lineTo(pD.x, pD.y);
+              ctx2D.moveTo(pB.x, pB.y);
+              ctx2D.lineTo(pC.x, pC.y);
+              ctx2D.stroke();
+
+              // 3. Draw highlighted target rings on each of the 4 fingers
+              [pA, pB, pC, pD].forEach((pt) => {
+                ctx2D.setLineDash([]);
+                ctx2D.strokeStyle = "#ffaa00";
+                ctx2D.beginPath();
+                ctx2D.arc(pt.x, pt.y, 14, 0, Math.PI * 2);
+                ctx2D.stroke();
+              });
+
+              // 4. Fill translucent quantum field
+              ctx2D.fillStyle = "rgba(255, 0, 85, 0.12)";
+              ctx2D.beginPath();
+              ctx2D.moveTo(pA.x, pA.y);
+              ctx2D.lineTo(pB.x, pB.y);
+              ctx2D.lineTo(pD.x, pD.y);
+              ctx2D.lineTo(pC.x, pC.y);
+              ctx2D.closePath();
+              ctx2D.fill();
+              ctx2D.restore();
+
+              // Three.js Hyperspace Warp Transition
+              tunnelMat.opacity = THREE.MathUtils.lerp(tunnelMat.opacity, 0.75, 0.1);
+              tunnelMesh.rotation.z += 0.045;
+              coreGroup.scale.lerp(new THREE.Vector3(0.25, 0.25, 0.25), 0.1);
+              starMat.color.setHex(0xffaa00);
+              coreLight.color.setHex(0xff0055);
+            }
           } else {
-            inWarpDimension = false;
-            portalBox.style.display = 'none';
-            tunnelMat.opacity = THREE.MathUtils.lerp(tunnelMat.opacity, 0.0, 0.08);
+            // When pinch on EITHER hand is released (or hands leave view), BREAK LOCK IMMEDIATELY
+            isDimensionLocked = false;
+            teleWarp.textContent = "INACTIVE";
+            if (specLock) specLock.textContent = "STANDBY";
+
+            tunnelMat.opacity = THREE.MathUtils.lerp(tunnelMat.opacity, 0.0, 0.1);
             coreGroup.scale.lerp(new THREE.Vector3(1, 1, 1), 0.08);
             starMat.color.setHex(0x00f0ff);
             coreLight.color.setHex(0x00f0ff);
+          }
 
-            if (!twoFingerSwipeActive) {
-              statusRibbon.textContent = "SKELETON TRACKING ACTIVE";
-              statusRibbon.className = "engaged";
+          // --- 5. SINGLE-HAND AIR-MOUSE CURSOR (When NOT in Dimension Lock) ---
+          if (!isDimensionLocked && pinchedHands.length === 1) {
+            airMouseEngaged = true;
+            const singlePinch = pinchedHands[0].mid;
+
+            cursorX += (singlePinch.x - cursorX) * 0.45;
+            cursorY += (singlePinch.y - cursorY) * 0.45;
+
+            virtualCursor.style.display = 'block';
+            virtualCursor.style.left = `${cursorX}px`;
+            virtualCursor.style.top = `${cursorY}px`;
+            virtualCursor.classList.add('clicking');
+
+            teleMode.textContent = "AIR_MOUSE [LOCKED]";
+            statusRibbon.textContent = "AIR-MOUSE ACTIVE";
+            statusRibbon.className = "mouse-mode";
+
+            // Auto-click elements under cursor
+            if (now - lastClickTime > 280) {
+              const elementUnder = document.elementFromPoint(cursorX, cursorY);
+              if (elementUnder) {
+                elementUnder.click();
+                lastClickTime = now;
+              }
             }
+
+            // Air sketchpad drawing
+            if (currentTabIndex === 1) {
+              const rect = sketchCanvas.getBoundingClientRect();
+              if (cursorX >= rect.left && cursorX <= rect.right && cursorY >= rect.top && cursorY <= rect.bottom) {
+                const sX = cursorX - rect.left;
+                const sY = cursorY - rect.top;
+                if (!isDrawing) {
+                  isDrawing = true;
+                  prevSketchX = sX;
+                  prevSketchY = sY;
+                } else {
+                  sketchCtx.strokeStyle = brushColor;
+                  sketchCtx.lineWidth = 3;
+                  sketchCtx.lineCap = 'round';
+                  sketchCtx.beginPath();
+                  sketchCtx.moveTo(prevSketchX, prevSketchY);
+                  sketchCtx.lineTo(sX, sY);
+                  sketchCtx.stroke();
+                  prevSketchX = sX;
+                  prevSketchY = sY;
+                }
+              } else {
+                isDrawing = false;
+              }
+            }
+          } else {
+            isDrawing = false;
+            if (!isDimensionLocked) {
+              virtualCursor.style.display = 'none';
+              virtualCursor.classList.remove('clicking');
+              teleMode.textContent = "HOVER";
+              if (!twoFingerSwipeActive) {
+                statusRibbon.textContent = "OPTICAL TRACKING ACTIVE";
+                statusRibbon.className = "";
+              }
+            } else {
+              virtualCursor.style.display = 'none';
+            }
+          }
+
+          if (!twoFingerSwipeActive) {
+            prevSwipeX = null;
           }
         } else {
           teleFingers.textContent = "0";
-          portalBox.style.display = 'none';
-          inWarpDimension = false;
+          virtualCursor.style.display = 'none';
+          isDimensionLocked = false;
         }
       }
 
